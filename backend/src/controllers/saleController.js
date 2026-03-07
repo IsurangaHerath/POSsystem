@@ -1,9 +1,3 @@
-/**
- * Sale Controller
- * 
- * Handles sales transaction operations.
- */
-
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 const { successResponse, createdResponse, paginatedResponse } = require('../utils/response');
@@ -11,10 +5,6 @@ const { NotFoundError, ValidationError, ConflictError } = require('../middleware
 const logger = require('../utils/logger');
 const db = require('../config/database');
 
-/**
- * Get all sales with pagination
- * @route GET /api/sales
- */
 const getSales = async (req, res, next) => {
     try {
         const {
@@ -45,10 +35,6 @@ const getSales = async (req, res, next) => {
     }
 };
 
-/**
- * Get sale by ID with items
- * @route GET /api/sales/:id
- */
 const getSaleById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -65,25 +51,18 @@ const getSaleById = async (req, res, next) => {
     }
 };
 
-/**
- * Create new sale
- * @route POST /api/sales
- */
 const createSale = async (req, res, next) => {
     try {
         const { items, payment_method, amount_paid, discount_amount = 0, notes } = req.body;
         const userId = req.user.id;
 
-        // Validate items
         if (!items || items.length === 0) {
             throw new ValidationError('At least one item is required');
         }
 
-        // Start transaction
         const connection = await db.beginTransaction();
 
         try {
-            // Calculate totals
             let subtotal = 0;
             let totalTax = 0;
             const saleItems = [];
@@ -121,10 +100,8 @@ const createSale = async (req, res, next) => {
             const totalAmount = subtotal + totalTax - discount_amount;
             const changeAmount = amount_paid - totalAmount;
 
-            // Generate invoice number
             const invoiceNumber = await Sale.generateInvoiceNumber();
 
-            // Create sale
             const saleId = await Sale.create({
                 invoice_number: invoiceNumber,
                 user_id: userId,
@@ -138,12 +115,10 @@ const createSale = async (req, res, next) => {
                 notes
             });
 
-            // Create sale items and update stock
             for (const saleItem of saleItems) {
                 await Sale.createItem(saleId, saleItem);
                 await Product.updateStock(saleItem.product_id, -saleItem.quantity);
 
-                // Log inventory change
                 await Sale.logInventoryChange(
                     saleItem.product_id,
                     -saleItem.quantity,
@@ -155,7 +130,6 @@ const createSale = async (req, res, next) => {
 
             await db.commitTransaction(connection);
 
-            // Get created sale
             const sale = await Sale.findByIdWithItems(saleId);
 
             logger.info(`Sale created: ${invoiceNumber} by ${req.user.username}`);
@@ -170,16 +144,11 @@ const createSale = async (req, res, next) => {
     }
 };
 
-/**
- * Void a sale
- * @route PUT /api/sales/:id/void
- */
 const voidSale = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { reason } = req.body;
 
-        // Check if sale exists
         const sale = await Sale.findById(id);
         if (!sale) {
             throw new NotFoundError('Sale not found');
@@ -189,19 +158,15 @@ const voidSale = async (req, res, next) => {
             throw new ConflictError('Sale is already voided');
         }
 
-        // Start transaction
         const connection = await db.beginTransaction();
 
         try {
-            // Void the sale
             await Sale.voidSale(id);
 
-            // Restore stock for all items
             const items = await Sale.getSaleItems(id);
             for (const item of items) {
                 await Product.updateStock(item.product_id, item.quantity);
 
-                // Log inventory change
                 await Sale.logInventoryChange(
                     item.product_id,
                     item.quantity,
@@ -226,10 +191,6 @@ const voidSale = async (req, res, next) => {
     }
 };
 
-/**
- * Generate invoice PDF
- * @route GET /api/sales/:id/invoice
- */
 const generateInvoice = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -240,7 +201,6 @@ const generateInvoice = async (req, res, next) => {
             throw new NotFoundError('Sale not found');
         }
 
-        // For now, return sale data (PDF generation would be implemented with PDFKit)
         res.setHeader('Content-Type', 'application/json');
         return res.json({
             success: true,
@@ -252,10 +212,6 @@ const generateInvoice = async (req, res, next) => {
     }
 };
 
-/**
- * Generate receipt HTML
- * @route GET /api/sales/:id/receipt
- */
 const generateReceipt = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -266,7 +222,6 @@ const generateReceipt = async (req, res, next) => {
             throw new NotFoundError('Sale not found');
         }
 
-        // Generate simple HTML receipt
         const html = `
       <!DOCTYPE html>
       <html>

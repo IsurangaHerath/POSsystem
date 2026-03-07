@@ -1,20 +1,6 @@
-/**
- * Sale Model
- * 
- * Database operations for sales transactions.
- */
-
 const db = require('../config/database');
 
-/**
- * Sale model class
- */
 class Sale {
-    /**
-     * Create a new sale
-     * @param {Object} saleData - Sale data
-     * @returns {Promise<number>} Inserted sale ID
-     */
     static async create(saleData) {
         const {
             invoice_number,
@@ -45,12 +31,6 @@ class Sale {
         return result.insertId;
     }
 
-    /**
-     * Create sale item
-     * @param {number} saleId - Sale ID
-     * @param {Object} itemData - Item data
-     * @returns {Promise<number>} Inserted item ID
-     */
     static async createItem(saleId, itemData) {
         const {
             product_id,
@@ -79,11 +59,6 @@ class Sale {
         return result.insertId;
     }
 
-    /**
-     * Find sale by ID
-     * @param {number} id - Sale ID
-     * @returns {Promise<Object|null>} Sale object or null
-     */
     static async findById(id) {
         const sql = `
       SELECT s.*, u.full_name as cashier_name
@@ -95,11 +70,6 @@ class Sale {
         return db.getOne(sql, [id]);
     }
 
-    /**
-     * Find sale by ID with items
-     * @param {number} id - Sale ID
-     * @returns {Promise<Object|null>} Sale with items or null
-     */
     static async findByIdWithItems(id) {
         const sale = await this.findById(id);
 
@@ -119,11 +89,6 @@ class Sale {
         return sale;
     }
 
-    /**
-     * Get all sales with pagination
-     * @param {Object} options - Query options
-     * @returns {Promise<Object>} Sales and pagination info
-     */
     static async findAll(options = {}) {
         const {
             page = 1,
@@ -135,7 +100,6 @@ class Sale {
             user_id = null
         } = options;
 
-        // Build WHERE clause
         const conditions = [];
         const params = [];
 
@@ -166,7 +130,6 @@ class Sale {
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-        // Get total count
         const countSql = `
       SELECT COUNT(*) as total 
       FROM sales s
@@ -175,7 +138,6 @@ class Sale {
         const countResult = await db.getOne(countSql, params);
         const total = countResult.total;
 
-        // Get paginated results
         const offset = (page - 1) * limit;
         const sql = `
       SELECT s.*, u.full_name as cashier_name,
@@ -200,11 +162,6 @@ class Sale {
         };
     }
 
-    /**
-     * Void a sale
-     * @param {number} id - Sale ID
-     * @returns {Promise<boolean>} Update success
-     */
     static async voidSale(id) {
         const sql = 'UPDATE sales SET status = ? WHERE id = ?';
         const result = await db.query(sql, ['voided', id]);
@@ -212,20 +169,11 @@ class Sale {
         return result.affectedRows > 0;
     }
 
-    /**
-     * Get sale items
-     * @param {number} saleId - Sale ID
-     * @returns {Promise<Array>} Array of sale items
-     */
     static async getSaleItems(saleId) {
         const sql = 'SELECT * FROM sale_items WHERE sale_id = ?';
         return db.getMany(sql, [saleId]);
     }
 
-    /**
-     * Generate invoice number
-     * @returns {Promise<string>} Invoice number
-     */
     static async generateInvoiceNumber() {
         const date = new Date();
         const datePart = date.toISOString().slice(0, 10).replace(/-/g, '');
@@ -241,17 +189,7 @@ class Sale {
         return `INV${datePart}${sequence}`;
     }
 
-    /**
-     * Log inventory change
-     * @param {number} productId - Product ID
-     * @param {number} quantityChange - Quantity change (+/-)
-     * @param {number} referenceId - Reference ID
-     * @param {string} referenceType - Reference type
-     * @param {number} userId - User ID
-     * @param {string} notes - Notes
-     */
     static async logInventoryChange(productId, quantityChange, referenceId, referenceType, userId, notes = null) {
-        // Get current quantity
         const productSql = 'SELECT quantity_in_stock FROM products WHERE id = ?';
         const product = await db.getOne(productSql, [productId]);
 
@@ -282,11 +220,6 @@ class Sale {
         ]);
     }
 
-    /**
-     * Get daily sales summary
-     * @param {string} date - Date string
-     * @returns {Promise<Object>} Daily summary
-     */
     static async getDailySummary(date) {
         const sql = `
       SELECT 
@@ -302,12 +235,6 @@ class Sale {
         return db.getOne(sql, [date]);
     }
 
-    /**
-     * Get monthly sales summary
-     * @param {number} year - Year
-     * @param {number} month - Month
-     * @returns {Promise<Object>} Monthly summary
-     */
     static async getMonthlySummary(year, month) {
         const sql = `
       SELECT 
@@ -323,11 +250,6 @@ class Sale {
         return db.getOne(sql, [year, month]);
     }
 
-    /**
-     * Get top selling products
-     * @param {Object} options - Query options
-     * @returns {Promise<Array>} Top products
-     */
     static async getTopProducts(options = {}) {
         const { limit = 10, startDate = null, endDate = null } = options;
 

@@ -1,34 +1,19 @@
-/**
- * Electron Main Process
- * 
- * Main entry point for the Electron application.
- * Handles window creation, IPC, and app lifecycle.
- */
-
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeTheme } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 
-// Initialize electron-store for persistent settings
 const store = new Store();
 
-// Keep a global reference of the window object
 let mainWindow = null;
 let tray = null;
 
-// Check if running in development
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-// API URL based on environment
 const API_URL = isDev
     ? 'http://localhost:5000/api'
     : 'https://api.yourdomain.com/api';
 
-/**
- * Create the main application window
- */
 function createWindow() {
-    // Get window state from store
     const windowState = store.get('windowState', {
         width: 1400,
         height: 900,
@@ -37,7 +22,6 @@ function createWindow() {
         isMaximized: false
     });
 
-    // Create the browser window
     mainWindow = new BrowserWindow({
         width: windowState.width,
         height: windowState.height,
@@ -52,20 +36,17 @@ function createWindow() {
         },
         icon: path.join(__dirname, '../../public/icons/icon.png'),
         title: 'POS System',
-        show: false, // Don't show until ready
-        backgroundColor: '#1f2937' // Match dark theme
+        show: false,
+        backgroundColor: '#1f2937'
     });
 
-    // Load the app
     if (isDev) {
         mainWindow.loadURL('http://localhost:5173');
-        // Open DevTools in development
         mainWindow.webContents.openDevTools();
     } else {
         mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
     }
 
-    // Show window when ready
     mainWindow.once('ready-to-show', () => {
         if (windowState.isMaximized) {
             mainWindow.maximize();
@@ -73,7 +54,6 @@ function createWindow() {
         mainWindow.show();
     });
 
-    // Save window state on close
     mainWindow.on('close', () => {
         const bounds = mainWindow.getBounds();
         store.set('windowState', {
@@ -85,18 +65,13 @@ function createWindow() {
         });
     });
 
-    // Handle window closed
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
 
-    // Create application menu
     createMenu();
 }
 
-/**
- * Create application menu
- */
 function createMenu() {
     const template = [
         {
@@ -143,14 +118,12 @@ function createMenu() {
                 {
                     label: 'About POS System',
                     click: () => {
-                        // Show about dialog
                     }
                 }
             ]
         }
     ];
 
-    // Add developer tools menu in development
     if (isDev) {
         template[2].submenu.push(
             { type: 'separator' },
@@ -162,9 +135,6 @@ function createMenu() {
     Menu.setApplicationMenu(menu);
 }
 
-/**
- * Create system tray icon
- */
 function createTray() {
     tray = new Tray(path.join(__dirname, '../../public/icons/icon.png'));
 
@@ -182,12 +152,10 @@ function createTray() {
     });
 }
 
-// App ready event
 app.whenReady().then(() => {
     createWindow();
     createTray();
 
-    // On macOS, recreate window when dock icon is clicked
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
@@ -195,27 +163,19 @@ app.whenReady().then(() => {
     });
 });
 
-// Quit when all windows are closed (except on macOS)
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
 });
 
-// IPC Handlers
-
-// Get API URL
 ipcMain.handle('get-api-url', () => API_URL);
-
-// Get app version
 ipcMain.handle('get-version', () => app.getVersion());
 
-// Store operations
 ipcMain.handle('store-get', (event, key) => store.get(key));
 ipcMain.handle('store-set', (event, key, value) => store.set(key, value));
 ipcMain.handle('store-delete', (event, key) => store.delete(key));
 
-// Theme operations
 ipcMain.handle('get-theme', () => {
     return store.get('theme', 'light');
 });
@@ -226,7 +186,6 @@ ipcMain.handle('set-theme', (event, theme) => {
     return theme;
 });
 
-// Print receipt
 ipcMain.handle('print-receipt', async (event, content) => {
     const printWindow = new BrowserWindow({
         width: 300,
@@ -254,7 +213,6 @@ ipcMain.handle('print-receipt', async (event, content) => {
     });
 });
 
-// Generate PDF
 ipcMain.handle('generate-pdf', async (event, content) => {
     const pdfWindow = new BrowserWindow({
         width: 800,
@@ -282,7 +240,6 @@ ipcMain.handle('generate-pdf', async (event, content) => {
     });
 });
 
-// Security: Prevent new window creation
 app.on('web-contents-created', (event, contents) => {
     contents.on('new-window', (event, navigationUrl) => {
         event.preventDefault();

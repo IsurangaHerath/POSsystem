@@ -1,18 +1,8 @@
-/**
- * Product Controller
- * 
- * Handles product management operations.
- */
-
 const Product = require('../models/Product');
 const { successResponse, createdResponse, paginatedResponse, notFoundResponse } = require('../utils/response');
 const { NotFoundError, ConflictError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
-/**
- * Get all products with pagination
- * @route GET /api/products
- */
 const getProducts = async (req, res, next) => {
     try {
         const {
@@ -45,10 +35,6 @@ const getProducts = async (req, res, next) => {
     }
 };
 
-/**
- * Get product by ID
- * @route GET /api/products/:id
- */
 const getProductById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -65,10 +51,6 @@ const getProductById = async (req, res, next) => {
     }
 };
 
-/**
- * Get product by barcode
- * @route GET /api/products/barcode/:barcode
- */
 const getProductByBarcode = async (req, res, next) => {
     try {
         const { barcode } = req.params;
@@ -85,10 +67,6 @@ const getProductByBarcode = async (req, res, next) => {
     }
 };
 
-/**
- * Get low stock products
- * @route GET /api/products/low-stock
- */
 const getLowStockProducts = async (req, res, next) => {
     try {
         const products = await Product.getLowStock();
@@ -99,10 +77,6 @@ const getLowStockProducts = async (req, res, next) => {
     }
 };
 
-/**
- * Create new product
- * @route POST /api/products
- */
 const createProduct = async (req, res, next) => {
     try {
         const {
@@ -119,13 +93,11 @@ const createProduct = async (req, res, next) => {
             tax_rate = 0
         } = req.body;
 
-        // Check if SKU already exists
         const skuExists = await Product.skuExists(sku);
         if (skuExists) {
             throw new ConflictError('SKU already exists');
         }
 
-        // Check if barcode already exists (if provided)
         if (barcode) {
             const barcodeExists = await Product.barcodeExists(barcode);
             if (barcodeExists) {
@@ -133,7 +105,6 @@ const createProduct = async (req, res, next) => {
             }
         }
 
-        // Create product
         const productId = await Product.create({
             name,
             barcode,
@@ -148,7 +119,6 @@ const createProduct = async (req, res, next) => {
             tax_rate
         });
 
-        // Get created product
         const product = await Product.findById(productId);
 
         logger.info(`Product created: ${sku} by ${req.user.username}`);
@@ -159,22 +129,16 @@ const createProduct = async (req, res, next) => {
     }
 };
 
-/**
- * Update product
- * @route PUT /api/products/:id
- */
 const updateProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
 
-        // Check if product exists
         const existingProduct = await Product.findById(id);
         if (!existingProduct) {
             throw new NotFoundError('Product not found');
         }
 
-        // Check if SKU is being changed and if it already exists
         if (updateData.sku && updateData.sku !== existingProduct.sku) {
             const skuExists = await Product.skuExists(updateData.sku, parseInt(id));
             if (skuExists) {
@@ -182,7 +146,6 @@ const updateProduct = async (req, res, next) => {
             }
         }
 
-        // Check if barcode is being changed and if it already exists
         if (updateData.barcode && updateData.barcode !== existingProduct.barcode) {
             const barcodeExists = await Product.barcodeExists(updateData.barcode, parseInt(id));
             if (barcodeExists) {
@@ -190,10 +153,8 @@ const updateProduct = async (req, res, next) => {
             }
         }
 
-        // Update product
         await Product.update(id, updateData);
 
-        // Get updated product
         const product = await Product.findById(id);
 
         logger.info(`Product updated: ${product.sku} by ${req.user.username}`);
@@ -204,21 +165,15 @@ const updateProduct = async (req, res, next) => {
     }
 };
 
-/**
- * Delete product (soft delete)
- * @route DELETE /api/products/:id
- */
 const deleteProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        // Check if product exists
         const product = await Product.findById(id);
         if (!product) {
             throw new NotFoundError('Product not found');
         }
 
-        // Soft delete product
         await Product.delete(id);
 
         logger.info(`Product deleted: ${product.sku} by ${req.user.username}`);

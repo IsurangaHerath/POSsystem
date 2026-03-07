@@ -1,21 +1,7 @@
-/**
- * Product Model
- * 
- * Database operations for product management.
- */
-
 const db = require('../config/database');
 const logger = require('../utils/logger');
 
-/**
- * Product model class
- */
 class Product {
-    /**
-     * Create a new product
-     * @param {Object} productData - Product data
-     * @returns {Promise<number>} Inserted product ID
-     */
     static async create(productData) {
         const {
             name,
@@ -45,7 +31,6 @@ class Product {
             quantity_in_stock, reorder_level, unit, description, image_url, tax_rate
         ]);
 
-        // Create inventory record
         const productId = result.insertId;
         await db.query(
             'INSERT INTO inventory (product_id, quantity_available, quantity_reserved, quantity_ordered) VALUES (?, ?, 0, 0)',
@@ -55,11 +40,6 @@ class Product {
         return productId;
     }
 
-    /**
-     * Find product by ID
-     * @param {number} id - Product ID
-     * @returns {Promise<Object|null>} Product object or null
-     */
     static async findById(id) {
         const sql = `
       SELECT p.*, c.name as category_name,
@@ -78,11 +58,6 @@ class Product {
         return db.getOne(sql, [id]);
     }
 
-    /**
-     * Find product by barcode
-     * @param {string} barcode - Product barcode
-     * @returns {Promise<Object|null>} Product object or null
-     */
     static async findByBarcode(barcode) {
         const sql = `
       SELECT id, name, barcode, sku, selling_price, quantity_in_stock, tax_rate
@@ -93,24 +68,12 @@ class Product {
         return db.getOne(sql, [barcode]);
     }
 
-    /**
-     * Find product by SKU
-     * @param {string} sku - Product SKU
-     * @returns {Promise<Object|null>} Product object or null
-     */
     static async findBySku(sku) {
-        const sql = `
-      SELECT * FROM products WHERE sku = ?
-    `;
+        const sql = `SELECT * FROM products WHERE sku = ?`;
 
         return db.getOne(sql, [sku]);
     }
 
-    /**
-     * Get all products with pagination
-     * @param {Object} options - Query options
-     * @returns {Promise<Object>} Products and pagination info
-     */
     static async findAll(options = {}) {
         const {
             page = 1,
@@ -123,7 +86,6 @@ class Product {
             sortOrder = 'ASC'
         } = options;
 
-        // Build WHERE clause
         const conditions = ['p.is_active = TRUE'];
         const params = [];
 
@@ -148,12 +110,10 @@ class Product {
 
         const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
-        // Get total count
         const countSql = `SELECT COUNT(*) as total FROM products p ${whereClause}`;
         const countResult = await db.getOne(countSql, params);
         const total = countResult.total;
 
-        // Get paginated results
         const offset = (page - 1) * limit;
         const validSortColumns = ['id', 'name', 'sku', 'selling_price', 'quantity_in_stock', 'created_at'];
         const validSortOrder = ['ASC', 'DESC'];
@@ -187,12 +147,6 @@ class Product {
         };
     }
 
-    /**
-     * Update product
-     * @param {number} id - Product ID
-     * @param {Object} updateData - Data to update
-     * @returns {Promise<boolean>} Update success
-     */
     static async update(id, updateData) {
         const allowedFields = [
             'name', 'barcode', 'sku', 'category_id', 'cost_price', 'selling_price',
@@ -220,11 +174,6 @@ class Product {
         return result.affectedRows > 0;
     }
 
-    /**
-     * Delete product (soft delete)
-     * @param {number} id - Product ID
-     * @returns {Promise<boolean>} Delete success
-     */
     static async delete(id) {
         const sql = 'UPDATE products SET is_active = FALSE WHERE id = ?';
         const result = await db.query(sql, [id]);
@@ -232,12 +181,6 @@ class Product {
         return result.affectedRows > 0;
     }
 
-    /**
-     * Check if SKU exists
-     * @param {string} sku - SKU to check
-     * @param {number} excludeId - Product ID to exclude
-     * @returns {Promise<boolean>} SKU exists
-     */
     static async skuExists(sku, excludeId = null) {
         let sql = 'SELECT COUNT(*) as count FROM products WHERE sku = ?';
         const params = [sku];
@@ -251,12 +194,6 @@ class Product {
         return result.count > 0;
     }
 
-    /**
-     * Check if barcode exists
-     * @param {string} barcode - Barcode to check
-     * @param {number} excludeId - Product ID to exclude
-     * @returns {Promise<boolean>} Barcode exists
-     */
     static async barcodeExists(barcode, excludeId = null) {
         if (!barcode) return false;
 
@@ -272,10 +209,6 @@ class Product {
         return result.count > 0;
     }
 
-    /**
-     * Get low stock products
-     * @returns {Promise<Array>} Array of low stock products
-     */
     static async getLowStock() {
         const sql = `
       SELECT id, name, barcode, sku, quantity_in_stock, reorder_level,
@@ -292,12 +225,6 @@ class Product {
         return db.getMany(sql);
     }
 
-    /**
-     * Update stock quantity
-     * @param {number} id - Product ID
-     * @param {number} quantity - Quantity to add (negative to subtract)
-     * @returns {Promise<boolean>} Update success
-     */
     static async updateStock(id, quantity) {
         const sql = `
       UPDATE products 
@@ -306,7 +233,6 @@ class Product {
     `;
         const result = await db.query(sql, [quantity, id]);
 
-        // Also update inventory table
         await db.query(
             'UPDATE inventory SET quantity_available = quantity_available + ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ?',
             [quantity, id]
@@ -315,11 +241,6 @@ class Product {
         return result.affectedRows > 0;
     }
 
-    /**
-     * Get products by category
-     * @param {number} categoryId - Category ID
-     * @returns {Promise<Array>} Array of products
-     */
     static async findByCategory(categoryId) {
         const sql = `
       SELECT * FROM products
@@ -330,10 +251,6 @@ class Product {
         return db.getMany(sql, [categoryId]);
     }
 
-    /**
-     * Get total products count
-     * @returns {Promise<number>} Total products
-     */
     static async getTotalCount() {
         const sql = 'SELECT COUNT(*) as count FROM products WHERE is_active = TRUE';
         const result = await db.getOne(sql);

@@ -1,38 +1,27 @@
-/**
- * Application Constants
- * 
- * Centralized constants used throughout the application.
- */
-
-// User roles
 const ROLES = {
     ADMIN: 'admin',
     MANAGER: 'manager',
     CASHIER: 'cashier'
 };
 
-// Role hierarchy for permission checks
 const ROLE_HIERARCHY = {
     admin: 3,
     manager: 2,
     cashier: 1
 };
 
-// Sale status
 const SALE_STATUS = {
     COMPLETED: 'completed',
     VOIDED: 'voided',
     REFUNDED: 'refunded'
 };
 
-// Payment methods
 const PAYMENT_METHODS = {
     CASH: 'cash',
     CARD: 'card',
     MIXED: 'mixed'
 };
 
-// Purchase order status
 const PO_STATUS = {
     PENDING: 'pending',
     APPROVED: 'approved',
@@ -40,7 +29,6 @@ const PO_STATUS = {
     CANCELLED: 'cancelled'
 };
 
-// Inventory transaction types
 const INVENTORY_TRANSACTION_TYPES = {
     SALE: 'sale',
     PURCHASE: 'purchase',
@@ -48,14 +36,12 @@ const INVENTORY_TRANSACTION_TYPES = {
     RETURN: 'return'
 };
 
-// Stock status
 const STOCK_STATUS = {
     IN_STOCK: 'in_stock',
     LOW_STOCK: 'low_stock',
     OUT_OF_STOCK: 'out_of_stock'
 };
 
-// Error codes
 const ERROR_CODES = {
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
@@ -67,7 +53,6 @@ const ERROR_CODES = {
     RATE_LIMIT_ERROR: 'RATE_LIMIT_ERROR'
 };
 
-// HTTP status codes
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -82,21 +67,18 @@ const HTTP_STATUS = {
     INTERNAL_SERVER_ERROR: 500
 };
 
-// Pagination defaults
 const PAGINATION = {
     DEFAULT_PAGE: 1,
     DEFAULT_LIMIT: 20,
     MAX_LIMIT: 100
 };
 
-// Date formats
 const DATE_FORMATS = {
     DISPLAY: 'YYYY-MM-DD',
     DATETIME_DISPLAY: 'YYYY-MM-DD HH:mm:ss',
     INVOICE: 'YYYYMMDD'
 };
 
-// Default settings
 const DEFAULT_SETTINGS = {
     TAX_RATE: 10.00,
     CURRENCY_SYMBOL: '$',
@@ -106,57 +88,35 @@ const DEFAULT_SETTINGS = {
     PO_PREFIX: 'PO'
 };
 
-// Permission definitions
 const PERMISSIONS = {
-    // Dashboard
     VIEW_DASHBOARD: 'view_dashboard',
-
-    // Products
     VIEW_PRODUCTS: 'view_products',
     CREATE_PRODUCTS: 'create_products',
     EDIT_PRODUCTS: 'edit_products',
     DELETE_PRODUCTS: 'delete_products',
-
-    // Categories
     VIEW_CATEGORIES: 'view_categories',
     MANAGE_CATEGORIES: 'manage_categories',
-
-    // Sales
     CREATE_SALES: 'create_sales',
     VIEW_SALES: 'view_sales',
     VOID_SALES: 'void_sales',
-
-    // Inventory
     VIEW_INVENTORY: 'view_inventory',
     ADJUST_INVENTORY: 'adjust_inventory',
-
-    // Suppliers
     VIEW_SUPPLIERS: 'view_suppliers',
     MANAGE_SUPPLIERS: 'manage_suppliers',
-
-    // Purchase Orders
     VIEW_PURCHASE_ORDERS: 'view_purchase_orders',
     CREATE_PURCHASE_ORDERS: 'create_purchase_orders',
     APPROVE_PURCHASE_ORDERS: 'approve_purchase_orders',
     RECEIVE_PURCHASE_ORDERS: 'receive_purchase_orders',
-
-    // Reports
     VIEW_REPORTS: 'view_reports',
     EXPORT_REPORTS: 'export_reports',
-
-    // Users
     VIEW_USERS: 'view_users',
     MANAGE_USERS: 'manage_users',
-
-    // Settings
     VIEW_SETTINGS: 'view_settings',
     MANAGE_SETTINGS: 'manage_settings'
 };
 
-// Role permissions mapping
 const ROLE_PERMISSIONS = {
-    admin: Object.values(PERMISSIONS), // Admin has all permissions
-
+    admin: Object.values(PERMISSIONS),
     manager: [
         PERMISSIONS.VIEW_DASHBOARD,
         PERMISSIONS.VIEW_PRODUCTS,
@@ -178,7 +138,6 @@ const ROLE_PERMISSIONS = {
         PERMISSIONS.VIEW_REPORTS,
         PERMISSIONS.EXPORT_REPORTS
     ],
-
     cashier: [
         PERMISSIONS.VIEW_DASHBOARD,
         PERMISSIONS.VIEW_PRODUCTS,

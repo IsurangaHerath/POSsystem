@@ -1,9 +1,3 @@
-/**
- * Express Application Configuration
- * 
- * Main Express application setup with middleware and routes.
- */
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -15,7 +9,6 @@ const logger = require('./utils/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { validationError } = require('./utils/response');
 
-// Import routes
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const productRoutes = require('./routes/product.routes');
@@ -28,20 +21,14 @@ const reportRoutes = require('./routes/report.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const settingsRoutes = require('./routes/settings.routes');
 
-// Create Express app
 const app = express();
 
-// ============================================
-// Security Middleware
-// ============================================
-
-// Set security HTTP headers
+// Security middleware
 app.use(helmet({
-    contentSecurityPolicy: false, // Disable for API
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
 app.use(cors({
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
@@ -51,8 +38,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 300, // Limit each IP to 300 requests per window
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 300,
     message: {
         success: false,
         error: {
@@ -74,24 +61,13 @@ const limiter = rateLimit({
     }
 });
 
-// Apply rate limiting to all routes
 app.use('/api/', limiter);
 
-// ============================================
-// Request Parsing Middleware
-// ============================================
-
-// Parse JSON request body
+// Request parsing
 app.use(express.json({ limit: '10mb' }));
-
-// Parse URL-encoded request body
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ============================================
-// Request Logging
-// ============================================
-
-// HTTP request logger
+// Logging
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 } else {
@@ -102,11 +78,10 @@ if (process.env.NODE_ENV === 'development') {
     }));
 }
 
-// Custom request logger
+// Request timing
 app.use((req, res, next) => {
     const startTime = Date.now();
 
-    // Log response on finish
     res.on('finish', () => {
         const duration = Date.now() - startTime;
         logger.logRequest(req, res.statusCode, duration);
@@ -115,11 +90,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// ============================================
-// Validation Middleware
-// ============================================
-
-// Custom validation result handler
+// Validation middleware
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -128,14 +99,9 @@ const validate = (req, res, next) => {
     next();
 };
 
-// Make validate available globally
 app.set('validate', validate);
 
-// ============================================
-// API Routes
-// ============================================
-
-// Health check endpoint
+// Routes
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
@@ -145,7 +111,6 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// API documentation endpoint
 app.get('/api/docs', (req, res) => {
     res.json({
         success: true,
@@ -167,7 +132,6 @@ app.get('/api/docs', (req, res) => {
     });
 });
 
-// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -180,14 +144,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', settingsRoutes);
 
-// ============================================
-// Error Handling
-// ============================================
-
-// 404 handler
+// Error handling
 app.use(notFoundHandler);
-
-// Global error handler
 app.use(errorHandler);
 
 module.exports = app;

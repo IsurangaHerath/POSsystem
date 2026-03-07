@@ -1,9 +1,3 @@
-/**
- * Login Page
- * 
- * User authentication page with form validation
- */
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -22,14 +16,12 @@ const LoginPage = () => {
     const { success, error } = useToast();
     const navigate = useNavigate();
 
-    // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated) {
             navigate('/dashboard');
         }
     }, [isAuthenticated, navigate]);
 
-    // Handle input change
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -37,7 +29,6 @@ const LoginPage = () => {
             [name]: value
         }));
 
-        // Clear error when user types
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -46,9 +37,7 @@ const LoginPage = () => {
         }
     };
 
-    // Validate form
     const validateForm = () => {
-        console.log('[DEBUG] validateForm called with:', formData);
         const newErrors = {};
 
         if (!formData.username.trim()) {
@@ -62,21 +51,16 @@ const LoginPage = () => {
         }
 
         setErrors(newErrors);
-        console.log('[DEBUG] validation errors:', newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle form submit
     const handleSubmit = async (e) => {
-        console.log('[DEBUG] handleSubmit triggered');
         e.preventDefault();
 
         if (!validateForm()) {
-            console.log('[DEBUG] Validation failed, returning early');
             return;
         }
 
-        console.log('[DEBUG] Validation passed, calling login...');
         setIsLoading(true);
 
         try {
@@ -97,7 +81,6 @@ const LoginPage = () => {
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full animate-fade-in">
-            {/* Header */}
             <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,9 +95,7 @@ const LoginPage = () => {
                 </p>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Username field */}
                 <div>
                     <label htmlFor="username" className="form-label">
                         Username
@@ -142,7 +123,6 @@ const LoginPage = () => {
                     )}
                 </div>
 
-                {/* Password field */}
                 <div>
                     <label htmlFor="password" className="form-label">
                         Password
@@ -186,7 +166,6 @@ const LoginPage = () => {
                     )}
                 </div>
 
-                {/* Submit button */}
                 <button
                     type="submit"
                     disabled={isLoading}
@@ -206,7 +185,6 @@ const LoginPage = () => {
                 </button>
             </form>
 
-            {/* Demo credentials */}
             <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-2">
                     Demo Credentials

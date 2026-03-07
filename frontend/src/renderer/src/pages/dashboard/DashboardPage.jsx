@@ -1,14 +1,7 @@
-/**
- * Dashboard Page
- * 
- * Main dashboard with sales overview, charts, and alerts
- */
-
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
-// Components
 import StatCard from '../../components/Dashboard/StatCard';
 import SalesChart from '../../components/Dashboard/SalesChart';
 import TopProducts from '../../components/Dashboard/TopProducts';
@@ -33,13 +26,11 @@ const DashboardPage = () => {
         recentSales: []
     });
 
-    // Fetch dashboard data
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
 
-                // Fetch all dashboard data in parallel
                 const [statsRes, chartRes, topProductsRes, lowStockRes, recentSalesRes] = await Promise.all([
                     api.get('/dashboard/stats').catch(() => ({ data: { data: dashboardData.stats } })),
                     api.get('/dashboard/sales-chart').catch(() => ({ data: { data: [] } })),
@@ -65,7 +56,6 @@ const DashboardPage = () => {
         fetchDashboardData();
     }, []);
 
-    // Format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -73,7 +63,6 @@ const DashboardPage = () => {
         }).format(amount || 0);
     };
 
-    // Get greeting based on time
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good morning';
@@ -91,7 +80,6 @@ const DashboardPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -111,7 +99,6 @@ const DashboardPage = () => {
                 </div>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title="Today's Sales"
@@ -160,25 +147,17 @@ const DashboardPage = () => {
                 />
             </div>
 
-            {/* Charts and Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Sales Chart */}
                 <div className="lg:col-span-2">
                     <SalesChart data={dashboardData.salesChart} />
                 </div>
-
-                {/* Top Products */}
                 <div>
                     <TopProducts products={dashboardData.topProducts} formatCurrency={formatCurrency} />
                 </div>
             </div>
 
-            {/* Bottom Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Low Stock Alert */}
                 <LowStockAlert products={dashboardData.lowStockProducts} />
-
-                {/* Recent Sales */}
                 <RecentSales sales={dashboardData.recentSales} formatCurrency={formatCurrency} />
             </div>
         </div>

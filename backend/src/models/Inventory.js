@@ -5,6 +5,7 @@
  */
 
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Inventory model class
@@ -50,46 +51,54 @@ class Inventory {
       FROM products p
       ${whereClause}
     `;
-        const countResult = await db.getOne(countSql, params);
-        const total = countResult.total;
+        logger.info('Inventory count SQL:', countSql, 'Params:', params);
+        
+        try {
+            const countResult = await db.getOne(countSql, params);
+            const total = countResult?.total || 0;
 
-        // Get paginated results
-        const offset = (page - 1) * limit;
-        const sql = `
-      SELECT 
-        p.id as product_id,
-        p.name as product_name,
-        p.barcode,
-        p.sku,
-        p.quantity_in_stock,
-        p.reorder_level,
-        COALESCE(i.quantity_available, p.quantity_in_stock) as quantity_available,
-        COALESCE(i.quantity_reserved, 0) as quantity_reserved,
-        COALESCE(i.quantity_ordered, 0) as quantity_ordered,
-        i.last_stock_check,
-        CASE 
-          WHEN p.quantity_in_stock <= 0 THEN 'out_of_stock'
-          WHEN p.quantity_in_stock <= p.reorder_level THEN 'low_stock'
-          ELSE 'in_stock'
-        END as stock_status
-      FROM products p
-      LEFT JOIN inventory i ON i.product_id = p.id
-      ${whereClause}
-      ORDER BY p.quantity_in_stock ASC
-      LIMIT ? OFFSET ?
-    `;
+            // Get paginated results
+            const offset = (page - 1) * limit;
+            const sql = `
+          SELECT 
+            p.id as product_id,
+            p.name as product_name,
+            p.barcode,
+            p.sku,
+            p.quantity_in_stock,
+            p.reorder_level,
+            COALESCE(i.quantity_available, p.quantity_in_stock) as quantity_available,
+            COALESCE(i.quantity_reserved, 0) as quantity_reserved,
+            COALESCE(i.quantity_ordered, 0) as quantity_ordered,
+            i.last_stock_check,
+            CASE 
+              WHEN p.quantity_in_stock <= 0 THEN 'out_of_stock'
+              WHEN p.quantity_in_stock <= p.reorder_level THEN 'low_stock'
+              ELSE 'in_stock'
+            END as stock_status
+          FROM products p
+          LEFT JOIN inventory i ON i.product_id = p.id
+          ${whereClause}
+          ORDER BY p.quantity_in_stock ASC
+          LIMIT ? OFFSET ?
+        `;
 
-        const inventory = await db.getMany(sql, [...params, limit, offset]);
+            logger.info('Inventory SQL:', sql, 'Params:', [...params, limit, offset]);
+            const inventory = await db.getMany(sql, [...params, limit, offset]);
 
-        return {
-            inventory,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit)
-            }
-        };
+            return {
+                inventory,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+        } catch (error) {
+            logger.error('Inventory findAll error:', error.message);
+            throw error;
+        }
     }
 
     /**

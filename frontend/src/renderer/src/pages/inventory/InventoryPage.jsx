@@ -42,15 +42,32 @@ const InventoryPage = () => {
             setIsLoading(true);
             const params = {
                 page: currentPage,
-                search: searchTerm,
-                stock_status: stockFilter
+                search: searchTerm
             };
 
+            // Add low_stock filter if selected
+            if (stockFilter === 'low') {
+                params.low_stock = 'true';
+            }
+
             const response = await api.get('/inventory', { params });
-            setInventory(response.data.data || []);
+            // Map backend field names to frontend expected names
+            const inventoryData = (response.data.data || []).map(item => ({
+                id: item.product_id,
+                name: item.product_name,
+                sku: item.sku,
+                barcode: item.barcode,
+                stock_quantity: item.quantity_in_stock,
+                min_stock_level: item.reorder_level,
+                unit: 'piece',
+                updated_at: item.last_stock_check,
+                stock_status: item.stock_status
+            }));
+            setInventory(inventoryData);
             setTotalPages(response.data.pagination?.totalPages || 1);
         } catch (err) {
-            error('Failed to load inventory');
+            console.error('Inventory fetch error:', err);
+            error('Failed to load inventory: ' + (err.response?.data?.message || err.message));
         } finally {
             setIsLoading(false);
         }

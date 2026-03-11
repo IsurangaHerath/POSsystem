@@ -2,9 +2,13 @@ import axios from 'axios';
 
 const getApiUrl = async () => {
     if (window.electron?.getApiUrl) {
-        return await window.electron.getApiUrl();
+        const url = await window.electron.getApiUrl();
+        console.log('[API] Getting URL from Electron:', url);
+        return url;
     }
-    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    console.log('[API] Using VITE_API_URL or default:', url);
+    return url;
 };
 
 const api = axios.create({
@@ -18,7 +22,12 @@ let apiUrl = 'http://localhost:5000/api';
 
 api.interceptors.request.use(
     async (config) => {
+        // Ensure apiUrl is set before each request
+        if (!apiUrl || apiUrl === 'http://localhost:5000/api') {
+            apiUrl = await getApiUrl();
+        }
         config.baseURL = apiUrl;
+        console.log('[API Request]', config.method?.toUpperCase(), config.baseURL + config.url);
 
         let token;
         if (window.electron?.store) {
@@ -39,9 +48,13 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log('[API Response]', response.config.url, response.status);
+        return response;
+    },
     async (error) => {
         const originalRequest = error.config;
+        console.error('[API Error]', originalRequest.url, error.response?.status, error.message);
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;

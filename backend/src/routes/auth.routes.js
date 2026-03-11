@@ -7,6 +7,39 @@ const { authenticate } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/rbac');
 const { asyncHandler } = require('../middleware/errorHandler');
 
+/**
+ * @route   POST /api/auth/register
+ * @desc    Register a new user (self-registration)
+ * @access  Public
+ */
+router.post('/register',
+    [
+        body('username')
+            .trim()
+            .isLength({ min: 3, max: 50 })
+            .withMessage('Username must be between 3 and 50 characters'),
+        body('email')
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('Valid email is required'),
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long'),
+        body('full_name')
+            .trim()
+            .notEmpty()
+            .withMessage('Full name is required'),
+        body('role')
+            .optional()
+            .isIn(['admin', 'manager', 'cashier'])
+            .withMessage('Invalid role'),
+        body('phone')
+            .optional()
+            .trim()
+    ],
+    asyncHandler(authController.register)
+);
+
 router.post('/login',
     [
         body('username')

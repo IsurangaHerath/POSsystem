@@ -16,6 +16,8 @@ const logger = require('../utils/logger');
  */
 const getInventory = async (req, res, next) => {
     try {
+        logger.info('GET /api/inventory called', { query: req.query });
+        
         const {
             page = 1,
             limit = 20,
@@ -32,10 +34,13 @@ const getInventory = async (req, res, next) => {
             search
         };
 
+        logger.info('Fetching inventory with options:', options);
         const { inventory, pagination } = await Inventory.findAll(options);
+        logger.info('Inventory fetched successfully:', { count: inventory?.length });
 
         return paginatedResponse(res, inventory, pagination);
     } catch (error) {
+        logger.error('Error fetching inventory:', error);
         next(error);
     }
 };

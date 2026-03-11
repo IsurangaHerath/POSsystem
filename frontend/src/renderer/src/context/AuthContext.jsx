@@ -111,6 +111,54 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    const register = useCallback(async (userData) => {
+        try {
+            const response = await api.post('/auth/register', userData);
+            console.log('[Auth] Register response:', response.data);
+
+            // Handle different response formats
+            let user, authToken;
+            
+            if (response.data.data) {
+                // Response has { success, message, data: { user, tokens } }
+                const responseData = response.data.data;
+                if (responseData.tokens) {
+                    user = responseData.user;
+                    authToken = responseData.tokens.accessToken;
+                } else {
+                    user = responseData.user;
+                    authToken = responseData.token;
+                }
+            } else {
+                // Fallback
+                user = response.data.user || userData;
+                authToken = response.data.accessToken || response.data.token;
+            }
+
+            if (!authToken) {
+                throw new Error('No authentication token received');
+            }
+
+            if (window.electron?.store) {
+                await window.electron.store.set('auth_token', authToken);
+                await window.electron.store.set('auth_user', user);
+            } else {
+                localStorage.setItem('auth_token', authToken);
+                localStorage.setItem('auth_user', JSON.stringify(user));
+            }
+
+            setToken(authToken);
+            setUser(user);
+            setIsAuthenticated(true);
+
+            return { success: true };
+        } catch (error) {
+            console.error('[Auth] Register error:', error);
+            const message = error.response?.data?.message || error.message || 'Registration failed';
+            return { success: false, error: message };
+        }
+    }, []);
+
     const logout = useCallback(async () => {
         try {
             await api.post('/auth/logout');
@@ -204,6 +252,7 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         isAuthenticated,
         login,
+        register,
         logout,
         hasRole,
         hasMinRole,

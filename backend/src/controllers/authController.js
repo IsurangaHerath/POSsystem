@@ -1,11 +1,67 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../middleware/auth');
-const { successResponse, errorResponse, unauthorizedResponse } = require('../utils/response');
-const { AuthenticationError, ValidationError, NotFoundError } = require('../middleware/errorHandler');
+const { successResponse, errorResponse, unauthorizedResponse, createdResponse } = require('../utils/response');
+const { AuthenticationError, ValidationError, NotFoundError, ConflictError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
 const SALT_ROUNDS = 12;
+
+const register = async (req, res, next) => {
+    try {
+        const { username, email, password, full_name, role = 'cashier', phone } = req.body;
+
+        // Check if username already exists
+        const usernameExists = await User.usernameExists(username);
+        if (usernameExists) {
+            throw new ConflictError('Username already exists');
+        }
+
+        // Check if email already exists
+        const emailExists = await User.emailExists(email);
+        if (emailExists) {
+            throw new ConflictError('Email already exists');
+        }
+
+        // Hash password
+        const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
+
+        // Create user - default role is cashier for self-registration
+        const userId = await User.create({
+            username,
+            email,
+            password_hash,
+            full_name,
+            role: 'cashier', // Force cashier role for self-registration
+            phone
+        });
+
+        const user = await User.findById(userId);
+
+        logger.info(`New user registered: ${username}`);
+
+        // Generate tokens
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        return createdResponse(res, {
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role
+            },
+            tokens: {
+                accessToken,
+                refreshToken
+            }
+        }, 'Registration successful. Welcome to POS System!');
+
+    } catch (error) {
+        next(error);
+    }
+};
 
 const login = async (req, res, next) => {
     try {
@@ -191,5 +247,6 @@ module.exports = {
     refresh,
     getCurrentUser,
     changePassword,
-    resetPassword
+    resetPassword,
+    register
 };

@@ -44,18 +44,34 @@ const ProductsPage = () => {
             const params = {
                 page: currentPage,
                 limit: itemsPerPage,
-                search: searchTerm,
-                category_id: selectedCategory
+                search: searchTerm
             };
+
+            if (selectedCategory) {
+                params.category_id = selectedCategory;
+            }
 
             const response = await api.get('/products', { params });
 
-            setProducts(response.data.data || []);
+            // Map backend field names to frontend expected names
+            const productsData = (response.data.data || []).map(item => ({
+                ...item,
+                id: item.id,
+                name: item.name,
+                sku: item.sku,
+                barcode: item.barcode,
+                price: item.selling_price,
+                stock_quantity: item.quantity_in_stock,
+                min_stock_level: item.reorder_level,
+                category_name: item.category_name,
+                image_url: item.image_url
+            }));
+            setProducts(productsData);
             setTotalPages(response.data.pagination?.totalPages || 1);
             setTotalItems(response.data.pagination?.totalItems || 0);
         } catch (err) {
             console.error('Failed to fetch products:', err);
-            error('Failed to load products');
+            error('Failed to load products: ' + (err.response?.data?.message || err.message));
         } finally {
             setIsLoading(false);
         }

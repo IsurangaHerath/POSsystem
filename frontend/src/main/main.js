@@ -34,7 +34,6 @@ function createWindow() {
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         },
-        icon: path.join(__dirname, '../../public/icons/icon.png'),
         title: 'POS System',
         show: false,
         backgroundColor: '#1f2937'
@@ -136,20 +135,8 @@ function createMenu() {
 }
 
 function createTray() {
-    tray = new Tray(path.join(__dirname, '../../public/icons/icon.png'));
-
-    const contextMenu = Menu.buildFromTemplate([
-        { label: 'Open POS System', click: () => mainWindow.show() },
-        { type: 'separator' },
-        { label: 'Quit', click: () => app.quit() }
-    ]);
-
-    tray.setToolTip('POS System');
-    tray.setContextMenu(contextMenu);
-
-    tray.on('double-click', () => {
-        mainWindow.show();
-    });
+    // Tray icon disabled - no icon file available
+    tray = null;
 }
 
 app.whenReady().then(() => {
